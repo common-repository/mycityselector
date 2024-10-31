@@ -1,0 +1,74 @@
+version: '3.6'
+
+services:
+  wordpress:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: password
+      WORDPRESS_DB_NAME: test_db
+      PHP_IDE_CONFIG: serverName=mcs
+
+    volumes:
+      - wordpress:/var/www/html
+      - type: bind
+        source: ./
+        target: /var/www/html/wp-content/plugins/mycityselector
+        consistency: cached
+    networks:
+      default:
+        aliases:
+          - wordpress.local
+          - usa.wordpress.local
+          - new-york-state.wordpress.local
+          - california.wordpress.local
+          - los-angeles.wordpress.local
+          - germany.wordpress.local
+          - brandenburg.wordpress.local
+          - berlin.wordpress.local
+          - bayern.wordpress.local
+          - munchen.wordpress.local
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+#      MYSQL_DATABASE: test_db
+#      MYSQL_USER: root
+#      MYSQL_PASSWORD: examplepass
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - db:/var/lib/mysql
+    ports:
+      - "33306:3306"
+  chrome:
+    image: selenium/standalone-chrome:4.0.0-rc-1-prerelease-20210823
+    volumes:
+      - /dev/shm:/dev/shm
+      - chrome:/home
+#    depends_on:
+#      - selenium-hub
+    environment:
+#      - SCREEN_WIDTH=960
+      - SCREEN_WIDTH=1920
+      - SCREEN_HEIGHT=1080
+      - SE_NODE_MAX_SESSIONS=50
+      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
+    ports:
+#      - "6900:5900"
+      - "7900:7900"
+volumes:
+  wordpress:
+  db:
+  chrome:
+networks:
+  default:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.0.0/16

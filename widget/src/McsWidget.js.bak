@@ -1,0 +1,218 @@
+import React, { useCallback, useState } from "react";
+import Dialog from "@material-ui/core/Dialog";
+import DialogContent from "@material-ui/core/DialogContent";
+import MuiDialogTitle from "@material-ui/core/DialogTitle";
+import {
+	Box,
+	Button,
+	ButtonGroup,
+	createMuiTheme,
+	IconButton,
+	Link,
+	Popover,
+	Typography,
+	withStyles,
+} from "@material-ui/core";
+import CloseIcon from "@material-ui/icons/Close";
+import { ListCountriesProvincesCities } from "./ListCountriesProvincesCities";
+import { makeStyles, ThemeProvider } from "@material-ui/core/styles";
+import { ListCities } from "./ListCities";
+import {
+	LIST_MODE_CITIES,
+	LIST_MODE_COUNTRIES_PROVINCES_CITIES, SEO_MODE_COOKIE,
+} from "./constants";
+import PropTypes from "prop-types";
+import _ from "lodash";
+
+const theme = createMuiTheme({
+	typography: {
+		htmlFontSize: 10,
+	},
+});
+
+const styles = (theme) => ({
+	root: {
+		margin: 0,
+		padding: theme.spacing(2),
+	},
+	closeButton: {
+		position: "absolute",
+		right: theme.spacing(1),
+		top: theme.spacing(1),
+		color: theme.palette.grey[500],
+	},
+});
+
+const DialogTitle = withStyles(styles)(
+	// @ts-ignore
+	({ children, classes, onClose, ...other }) => {
+		return (
+			<MuiDialogTitle
+				disableTypography
+				className={classes.root}
+				{...other}
+			>
+				<Box mr={6}>
+					<Typography variant="h6">{children}</Typography>
+				</Box>
+
+				{onClose ? (
+					<IconButton
+						aria-label="close"
+						className={classes.closeButton}
+						onClick={onClose}
+					>
+						<CloseIcon />
+					</IconButton>
+				) : null}
+			</MuiDialogTitle>
+		);
+	}
+);
+
+const useStyles = makeStyles(() => ({
+	root: {
+		overflowY: "visible",
+	},
+	paper: {
+		overflowY: "visible",
+	},
+	popup: {
+		padding: theme.spacing(1),
+		textAlign: "center",
+	},
+}));
+
+export const McsWidget = ({ options, data }) => {
+	const [open, setOpen] = useState(false);
+	const [showPopup, setShowPopup] = useState(true);
+	const linkRef = React.useRef();
+
+	const defaultCity = _.find(_.get(data, "cities"), [
+		"id",
+		_.get(options, "default_city_id"),
+	]);
+
+	const handleLinkClick = (e) => {
+		e.preventDefault();
+		setOpen(true);
+	};
+
+	const handleClose = () => {
+		setOpen(false);
+	};
+
+	const handlePopupNoClick = () => {
+		setShowPopup(false);
+		setOpen(true);
+	};
+
+	const handleCitySelect = useCallback(() => {
+		switch (_.get(options, "seo_mode")) {
+			case SEO_MODE_COOKIE:
+
+				break
+		}
+
+		setOpen(false);
+		setShowPopup(false);
+	}, []);
+	const classes = useStyles();
+
+	const handleCitySelectCookieMode = useCallback(() => {
+		//TODO
+	}, [])
+
+	return (
+		<ThemeProvider theme={theme}>
+			<Box m={2}>
+				<Link
+					aria-describedby="mcs-popup"
+					href="#"
+					onClick={handleLinkClick}
+					// @ts-ignore
+					ref={linkRef}
+				>
+					Choose location
+				</Link>
+				<Popover
+					id="mcs-popup"
+					open={showPopup}
+					// @ts-ignore
+					anchorEl={() => linkRef.current}
+					onClose={() => setShowPopup(false)}
+					anchorOrigin={{
+						vertical: "bottom",
+						horizontal: "center",
+					}}
+					transformOrigin={{
+						vertical: "top",
+						horizontal: "center",
+					}}
+					classes={{
+						paper: classes.popup,
+					}}
+				>
+					<Typography>
+						Is {_.get(defaultCity, "title")} your city?
+					</Typography>
+					<ButtonGroup
+						variant="contained"
+						size="small"
+						aria-label="contained primary button group"
+					>
+						<Button color="primary" onClick={handleCitySelect}>
+							Yes
+						</Button>
+						<Button color="secondary" onClick={handlePopupNoClick}>
+							No
+						</Button>
+					</ButtonGroup>
+				</Popover>
+			</Box>
+			<Dialog
+				open={open}
+				onClose={handleClose}
+				scroll="paper"
+				aria-labelledby="scroll-dialog-title"
+				classes={{
+					paper: classes.paper,
+				}}
+				fullWidth
+				maxWidth={options?.list_mode === LIST_MODE_CITIES ? "sm" : "md"}
+			>
+				<DialogTitle id="scroll-dialog-title" onClose={handleClose}>
+					{options?.title ?? ""}
+				</DialogTitle>
+				<DialogContent className={classes.root}>
+					{options?.list_mode === LIST_MODE_CITIES && (
+						<ListCities
+							data={data}
+							onSelectCity={handleCitySelect}
+						/>
+					)}
+					{options?.list_mode ===
+						LIST_MODE_COUNTRIES_PROVINCES_CITIES && (
+						<ListCountriesProvincesCities
+							data={data}
+							onSelectCity={handleCitySelect}
+						/>
+					)}
+				</DialogContent>
+			</Dialog>
+		</ThemeProvider>
+	);
+};
+
+McsWidget.propTypes = {
+	options: {
+		title: PropTypes.string,
+		list_mode: PropTypes.number,
+		default_city_id: PropTypes.number,
+	},
+	data: {
+		countries: PropTypes.array,
+		provinces: PropTypes.array,
+		cities: PropTypes.array,
+	},
+};
